@@ -1,0 +1,16 @@
+{
+  "bindings": [
+    {
+      "type": "eventHubTrigger",
+      "name": "deviceMessagesIn",
+      "eventHubName": "agp",
+      "datatype": "string",
+      "cardinality": "many",
+      "connection": "EventConsumerConnection",
+      "direction": "in"
+    }
+  ],
+  "scriptFile": "../dist/src/index.js",
+  "entryPoint": "clientDataFeedConsumer",
+  "disabled": false
+}

@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  terraform-dev:
+    # https://github.com/Zenika/terraform-azure-cli
+    # https://hub.docker.com/r/zenika/terraform-azure-cli
+    image: zenika/terraform-azure-cli:release-6.1_terraform-0.15.5_azcli-2.28.1
+
+    command: sleep infinity
+    working_dir: /app
+    volumes:
+       - ../../:/app
+      # - ../../service/:/app
+      # - ../../script/:/script
+      # - ../../service/deployments:/app/deployments
+    dns:
+      - 8.8.8.8

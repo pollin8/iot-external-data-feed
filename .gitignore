@@ -1,0 +1,12 @@
+# terraform
+.terraform
+
+# No archives
+artifacts
+*.zip
+dist
+build
+node_modules
+
+# No test output
+junit.xml

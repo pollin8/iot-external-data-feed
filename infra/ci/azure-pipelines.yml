@@ -1,0 +1,94 @@
+trigger:
+- master
+
+variables:
+  major: '1'
+  minor: '1'
+  revision: $[counter(variables['minor'], 1)] # This will get reset every time minor gets bumped.
+  softwareVersion: '$(major).$(minor).$(revision)'
+  packageName: external-data-connector-$(softwareVersion)-$(Build.BuildId).zip
+  functionAppName: "PUT-YOU-FUNTION_NAME_HERE"
+  serviceConnectorName: 'PUT-YOUR-SERVICE_CONNECTION-HERE'
+  src: "."
+  buildOutput: "$(src)/build"
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+- checkout: self
+  persistCredentials: 'true'
+  clean: 'true'
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '16.x'
+  displayName: 'Install Node.js'
+
+- script: |
+    set -ev
+    BUILD_VERSION=$(softwareVersion)
+    BUILD_DATE=$(date +%Y-%m-%dT%H:%MZ)
+    npm version ${BUILD_VERSION} --no-git-tag-version
+    # sed -i -e  "s/<version>/$BUILD_VERSION/; s/<date>/$BUILD_DATE/" ./src/version.ts
+  displayName: 'Set Software Version: $(softwareVersion)'
+
+- task: Npm@1
+  inputs:
+     command: 'install'
+
+- script: |
+    set -e
+    npm audit --omit=dev --audit-level=high
+  displayName: 'Npm Audit'
+
+- script: |
+    npm run build
+  displayName: 'Build Data Connector (DEV)'
+
+- script: |
+    set -e
+    npm run test:ci
+  displayName: 'Tests'
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testRunner: JUnit
+    testResultsFiles: 'junit.xml'
+  displayName: "Publish Test Results"
+
+
+- bash: |
+    ./infra/deployment.sh
+  env:
+    REMOVE: ''
+    SKIP_ZIP: 'true'
+
+  displayName: "Package As Azure Function"
+
+
+- task: ArchiveFiles@2
+  displayName: "Create Deployment Package"
+  inputs:
+    rootFolderOrFile: '$(buildOutput)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(packageName)'
+    replaceExistingArchive: true
+
+- task: PublishPipelineArtifact@1
+  displayName: "Publish Artifacts"
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/$(packageName)'
+    artifact: 'drop'
+    publishLocation: 'pipeline'
+
+- task: AzureFunctionApp@1
+  displayName: Azure Function App Deploy (DEV)
+  inputs:
+    azureSubscription: $(serviceConnectorName)
+    appType: functionApp
+    appName: $(functionAppName)
+    package: '$(Build.ArtifactStagingDirectory)/$(packageName)'
