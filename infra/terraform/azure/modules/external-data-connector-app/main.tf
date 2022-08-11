@@ -3,15 +3,16 @@ locals {
   module_name           = "external-data-feed-app"
   environment           = var.environment
   resource_group_name   = var.resource_group_name
-  event_consumer_conn   = var.event_consumer_connection
+
   unique_id             = lower(random_id.rand.hex)
   # Must be globally unique
-  storage_account_name  = "externaldatafeedapp${local.unique_id}"
+  storage_account_name  = "${local.environment}webjobs${local.unique_id}"
+
+  app_insights_con      = var.app_insights_con
 
   feed_storage_account_name = var.feed_storage_account_name
+  event_consumer_conn   = var.event_consumer_connection
 
-  app_insights_key      = var.app_insights_key
-  app_insights_con      = var.app_insights_con
 }
 
 
@@ -20,7 +21,7 @@ locals {
 # Storage Account Names Suffix
 #################################################
 resource "random_id" "rand" {
-  byte_length = 1
+  byte_length = 4
 }
 
 ####################################################
@@ -88,7 +89,7 @@ resource "azurerm_windows_function_app" "func" {
    use_32_bit_worker                      = true
    application_insights_connection_string = local.app_insights_con
    application_stack {
-      node_version = "16"
+      node_version = "~16"
     }
   }
 
@@ -100,7 +101,7 @@ resource "azurerm_windows_function_app" "func" {
     SCM_DO_BUILD_DURING_DEPLOYMENT        = false
 
     EventConsumerConnection               = local.event_consumer_conn
-    StorageAccount                        = "DefaultEndpointsProtocol=https;AccountName=${azurerm_storage_account.feed_data_storage.name};AccountKey=${azurerm_storage_account.feed_data_storage.primary_access_key}"
+    StorageAccount                        = data.azurerm_storage_account.feed_data_storage.primary_connection_string
   }
   tags = {
     "module" = local.module_name

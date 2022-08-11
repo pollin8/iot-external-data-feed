@@ -115,11 +115,18 @@ We must create a storage account for terraform to store its state files and a se
     ```
 
 1. Initialise & Plan Terraform module
-    ```bash
-    ./infra/terraform/azure/dev
-    terraform init
-    terraform plan
-   ```
+    1. Change to folder
+        -  `./infra/terraform/azure/dev`
+
+    1. Run terraform Init
+        ```bash
+        terraform init
+        ```
+
+    1. Terraform Plan
+        ```bash
+        terraform plan
+        ```
 
 
 
@@ -129,4 +136,5 @@ We must create a storage account for terraform to store its state files and a se
  groupadd -g 1001 docker
  sudo chown -R :1001 .
  chmod -R g=+rwx .
+ sudo chown 1000 file
  ```

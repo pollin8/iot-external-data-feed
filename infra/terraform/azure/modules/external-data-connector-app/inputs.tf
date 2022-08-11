@@ -18,19 +18,19 @@ variable resource_group_name {
     description = "name of the resource group to create the resources with in"
 }
 
-variable app_insights_key {
-  type = string
-  description = "Application insignts key"
-}
-
 variable app_insights_con {
   type = string
   description = "Application insignts connection string"
+  default = null
 }
 
 variable event_consumer_connection {
   type = string
   description = "This is the event hub consumer connection used only by this service to connect to Pollin8 Event Hub"
+  validation {
+    condition     = can(regex("Endpoint=sb*", var.event_consumer_connection))
+    error_message = "Must be a valid event hub connenction string."
+  }
 }
 
 variable feed_storage_account_name {

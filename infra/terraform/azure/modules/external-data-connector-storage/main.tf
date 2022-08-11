@@ -26,13 +26,40 @@ resource "azurerm_storage_account" "feed-storage" {
 ##################################################
 # Exported data
 ##################################################
-# DEMO
-resource "azurerm_storage_table" "currentStateDemo" {
-  name                 = "currentStateDemo"
+
+##################################################
+# Oyster
+resource "azurerm_storage_table" "oyster" {
+  name                 = "oyster"
   storage_account_name =  azurerm_storage_account.feed-storage.name
 }
 
-resource "azurerm_storage_table" "historyDemo" {
-  name                 = "historyDemo"
+resource "azurerm_storage_table" "oysterHistory" {
+  name                 = "oysterHistory"
+  storage_account_name =  azurerm_storage_account.feed-storage.name
+}
+
+
+##################################################
+#binLevel
+resource "azurerm_storage_table" "binLevel" {
+  name                 = "binLevel"
+  storage_account_name =  azurerm_storage_account.feed-storage.name
+}
+
+resource "azurerm_storage_table" "binLevelHistory" {
+  name                 = "binLevelHistory"
+  storage_account_name =  azurerm_storage_account.feed-storage.name
+}
+
+##################################################
+#peopleCounter
+resource "azurerm_storage_table" "peopleCounter" {
+  name                 = "peopleCounter"
+  storage_account_name =  azurerm_storage_account.feed-storage.name
+}
+
+resource "azurerm_storage_table" "peopleCounterHistory" {
+  name                 = "peopleCounterHistory"
   storage_account_name =  azurerm_storage_account.feed-storage.name
 }

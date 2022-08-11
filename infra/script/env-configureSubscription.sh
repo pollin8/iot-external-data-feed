@@ -16,7 +16,6 @@ export ARM_CLIENT_SECRET=<Service Principle secret/pwd>
 export ARM_ENVIRONMENT=public
 
 echo "Log in to DEVELOPMENT Azure with Service Account (name:$USER_NAME)"
-az logout
 az login --service-principal -u $ARM_CLIENT_ID -p "$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID"
 az account set --subscription=$ARM_SUBSCRIPTION_ID
 

@@ -1,23 +1,21 @@
 #####################################################################
 locals {
-    location = "westus"
-    environment = "dev"
-
-    common = {
-        resource_group_name = "external-data-feed"
-        app_insights_con = null
-    }
+    location            = "westus"
+    environment         = "dev"
+    resource_group_name = "external-data-feed"
+    unique_id           = lower(random_id.rand.hex)
     storageModule = {
-        feed_storage_account_name = "externaldatafeed${unique_id}"
+        feed_storage_account_name = "${local.environment}iotdata${local.unique_id}"
     }
     functionModule = {
-        event_consumer_connection = ""
+        app_insights_con            = null
+        event_consumer_connection   = ""
     }
 }
 
 #####################################################################
 resource "random_id" "rand" {
-  byte_length = 1
+  byte_length = 4
 }
 
 resource "azurerm_resource_group" "func" {
@@ -29,19 +27,21 @@ resource "azurerm_resource_group" "func" {
 #####################################################################
 module "external-data-connector-storage" {
     source = "../modules/external-data-connector-storage"
-    localtion = local.location
+    location = local.location
     environment = local.environment
     resource_group_name = azurerm_resource_group.func.name
-    storage_account_name = local.feed_storage_account_name
+    storage_account_name = local.storageModule.feed_storage_account_name
 }
 
 module "external-data-connector-app" {
     source = "../modules/external-data-connector-app"
-    localtion = local.location
+    location = local.location
     environment = local.environment
-    app_insights_con = local.common.app_insights_con
+    resource_group_name = azurerm_resource_group.func.name
+
+    app_insights_con = local.functionModule.app_insights_con
     event_consumer_connection = local.functionModule.event_consumer_connection
-    feed_storage_account_name = local.feed_storage_account_name
+    feed_storage_account_name = local.storageModule.feed_storage_account_name
 
     depends_on = [module.external-data-connector-storage]
 }

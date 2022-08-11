@@ -1,5 +1,6 @@
 # terraform
 .terraform
+.terraform.lock.hcl
 
 # No archives
 artifacts
