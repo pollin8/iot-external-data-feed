@@ -1,4 +1,4 @@
-#! /bin/sh -v
+#! /bin/bash
 
 # Exit on any errors
 set -e
@@ -7,6 +7,8 @@ ROOT=$PWD
 CURRENT_TIME=$(date "+%Y-%m-%d-%s")
 TARGET="${PWD}/build/"
 SRC="${PWD}/dist"
+ZIP_CMD="7z a -tzip -mx3 -bd "
+ARCHIVE_FILE="${PWD}/deployments/iot-external-data-feed-${CURRENT_TIME}.zip"
 
 rm -fr $TARGET
 
@@ -33,6 +35,13 @@ find . -name '*.test.js' -not -path './node_modules/*' -delete
 find . -name '*.config.js' -not -path './node_modules/*' -delete
 npm install --only=prod
 
-
+# Zip unless SKIP_ZIP is false
+if [[ -z "${SKIP_ZIP}" || "${SKIP_ZIP}" == "true" ]] ;
+then
+  echo "Zipping..."
+  $ZIP_CMD $ARCHIVE_FILE *
+else
+  echo "Skipping zip."
+fi
 
 cd ..

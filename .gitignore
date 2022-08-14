@@ -11,3 +11,6 @@ node_modules
 
 # No test output
 junit.xml
+
+# No deployment packages
+./service/deployments/*

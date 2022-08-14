@@ -21,6 +21,7 @@ Infrastructure requires:
  - A Function Pland / App for hosting the code that receives iot telemetry
 
 
+# PART 1 - Configure Cloud Infrastructure
 ## Prerequistutes
 1. A git repository to store scripts customised for your cloud environment
     - Create a private `Fork` of this repository
@@ -128,13 +129,52 @@ We must create a storage account for terraform to store its state files and a se
         terraform plan
         ```
 
+# Part 2 - Build and deploy Software
+The software is provided under the `service` folder in this repository.
+This contains an azure function written in Typescript targeting NodeJS.
+
+The software must be built and deployed to the cloud infrastrucutre provisioned in Part 1.
+
+If you are using a ci/cd pipeline the `./service/ci` folder contains a Azure Devops build and deploy pipline that can be used as an example to build and deploy tis service in your environment
+
+## Prerequsites
+Again this environment can either be setup locally or you can use the provided `docker-compose.yml` file and work within a docker container
+1. NodeJS 16 or above with npm
+1. A bash terminal
+
+
+## Building the Software
+From a bash terminal run the following commands
+1. ``` cd ./service ```
+1. ``` npm i ```
+1. ```npm run package ```
+
+The output of this script is a zip file named `iot-external-data-feed-2022-08-15-1660510879.zip` where the timestamp is generated and appended dynamically.
+
+## Deploy to Azure function
+Here the name of your azure function will be slightly different as it will have a different random suffix
+Also the last parameter specifying the source will be the output from the section above and will differ by timestamp every time its run
+
+```bash
+az functionapp deployment source config-zip \
+    --resource-group dev-external-data-feed \
+    --name dev-external-data-feed-app-<your random suffix> \
+    --src /service/deployments/iot-external-data-feed-2022-08-15-1660510879.zip
+```
 
 
 
-# File system permissions
+# Additional Info
+## File system permissions
 ```bash
  groupadd -g 1001 docker
  sudo chown -R :1001 .
  chmod -R g=+rwx .
  sudo chown 1000 file
+ ```
+
+ ## Install 7Zip
+ ```bash
+ sudo apt-get update -y
+ sudo apt-get install -y p7zip-full
  ```

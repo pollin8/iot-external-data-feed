@@ -10,7 +10,7 @@
       "direction": "in"
     }
   ],
-  "scriptFile": "../dist/src/index.js",
+  "scriptFile": "../dist/external-data-connector/index.js",
   "entryPoint": "clientDataFeedConsumer",
   "disabled": false
 }

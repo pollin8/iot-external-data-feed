@@ -10,8 +10,5 @@ services:
     working_dir: /app
     volumes:
        - ../../:/app
-      # - ../../service/:/app
-      # - ../../script/:/script
-      # - ../../service/deployments:/app/deployments
     dns:
       - 8.8.8.8
