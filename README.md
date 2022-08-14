@@ -1,4 +1,4 @@
-# Pollin8 External Data Feed Client Consumer
+# Pollin8 External Data Feed Client Consumer Seed Project
 
 This project is a starter project for clients wishing to consume data from the Pollib8 Iot platform.
 Data made available via EventHub Subscriptions.
@@ -9,7 +9,7 @@ It is recommended that this service be forked into you own private repositroy an
 You are encouraged to modify this code to perform any custom transformations / notifications / actions that you require for your internal systems.
 
 
-## Sample Current Functionality
+## Sample Functionality
 
 This sample receives Iot telemetry data in Json format. It simply flatterns the data and optionally stores it to a current state table and history table.
 
@@ -18,7 +18,7 @@ This sample receives Iot telemetry data in Json format. It simply flatterns the 
 The `infra` folder contains example terraform scripts for provisioning the required azure infrastructure to support this service.
 Infrastructure requires:
  - A storage account with tables provsioned for persisting data
- - A Function Pland / App for hosting the code that receives iot telemetry
+ - A Function Plan / App for hosting the code that receives iot telemetry, processes and stores it
 
 
 # PART 1 - Configure Cloud Infrastructure
@@ -32,50 +32,50 @@ Infrastructure requires:
 
    Or Docker
     - in which case we can use the docker image `zenika/terraform-azure-cli`
-    - see `/infra/docker`
+    - see `/infra/docker` for a sample compose file that makes use of this docker image
 
-1. An azure subscription and a login that is granted sufficent priveledges to create resources:
+1. An azure subscription and a login that is granted sufficent priveledges to create the following resource types:
     - Service Principle
     - Resource Groups
     - Storage Accounts
     - Function App
-    - Possibly Key Vault
 
 
-## Using a Docker
+
+## Using Docker
 1. Start the docker container:
     ```bash
         docker-compose -f ./infra/docker/docker-compose.yml up -d
     ```
 
-2. Connect to the bash prompt:
+2. Connect to the bash prompt of the container:
     ```bash
         docker-compose -f ./infra/docker/docker-compose.yml exec terraform-dev bash
     ```
 
-    Inside the container the path `/app` is noy mapped to the root of this project
+    Inside the container the root path to your workig files is `/app`
 
 ## Steps to prepare to use terraform
-We must create a storage account for terraform to store its state files and a service principle for creating azure resources
+We must create a storage account for terraform to store its state files and a service principle for creating azure resources. If you already have these rouresource within your subscription then the terraform scripts can be updated to use your exsiting reources
 
 ## Login to you subscription
 1. Log into you azure subscription
     ```bash
     az login
     ```
-1. From the list of subscriptions you have access to choose which one you intend to use and copy its:
+1. From the list of subscriptions you have access to choose which one you intend to use and copy these values for use later:
     - `id`  is the  (ARM_SUBSCRIPTION_ID )
     - `tenantId` is the (ARM_TENANT_ID)
-1. Associate your session with the subscription
+1. Associate your session with the subscription you wish to work within
     ```bash
         az account set --subscription="<id from above>"
     ```
     Now all operations will be performed agains this subscription
 
-## Create a storage account for terraform state
+## Create a storage account for terraform to store state
 1. Create a storage account for terraform to store its state using the following example script:
     - As storage account name must be globally unique the storage account name contains a random suffix genreated from the current timestamp
-    - Be sure to check that the settings in the file match your environment before running, especially `LOCATION`, Run
+    - Be sure to check that the settings in the script file below match your environment before running, especially `LOCATION`, Run
     - ```bash
       ./infra/script/create-terraform-remote-state.sh
       ```
@@ -83,9 +83,10 @@ We must create a storage account for terraform to store its state files and a se
 
 1. Update file, `infra/terraform/azure/dev/providers.tf` replace the value of `storage_account_name` with the name of the storage account created in the previous step
 
-## Create A Service Account
+## Create a Service Account
 1. Create a service account
     - see here: https://markheath.net/post/create-service-principal-azure-cli
+    - SUBSCRIPTION_ID is the value taken from previous steps
     ```bash
         az login
         az ad sp create-for-rbac --role="Owner" --scopes="/subscriptions/$SUBSCRIPTION_ID" --name "az-cli-serviceAccount"
