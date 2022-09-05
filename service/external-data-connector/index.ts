@@ -4,7 +4,7 @@ import { TableService } from "azure-storage";
 import { BINLEVEL_SCHEMA_URN, ExternalDeviceMessage, OYSTER_SCHEMA_URN, PEOPLECOUNTER_SCHEMA_URN } from "./ExternalDeviceMessage";
 import { dedupeRows, partitionRows } from "./partionAndDedupTableData";
 import { makeOutputMessages, SchemaBindings } from "./processDeviceMessage";
-import { executeBatchInsertOrMergeEntity, makeTableStorageRows, makeTableStorageService } from "./tableStorageHelper";
+import { executeBatchInsertOrMergeEntity, makeTableStorageRow, makeTableStorageService } from "./tableStorageHelper";
 
 
 
@@ -51,42 +51,38 @@ export async function clientDataFeedConsumer(context: Context, eventHubMessages:
 
     context.log(`Batch Size: ${eventHubMessages.length}`)
 
-    const messages = eventHubMessages.map(x => JSON.parse(x) as ExternalDeviceMessage);
-    const outputs = makeOutputMessages(tenantBindings, messages, context.log);
+    const inputMessages = eventHubMessages
+      .map(parseMessage)
+      .filter(isExternalDeviceMessage);
 
+    const outputs = makeOutputMessages(tenantBindings, inputMessages, context.log);
     const outputTablesNames = Object.keys(outputs)
-    const outputBindingData = outputTablesNames.reduce((prev, key) => {
-      prev[key] = outputs[key].map(row => makeTableStorageRows(row))
-      return prev
-    }, {})
-
-
     context.log(`[${serviceTag}}] - Number of Outputs:${outputTablesNames.length}, Total Rows:${eventHubMessages.length}`)
+    if (outputTablesNames.length === 0) return
 
-    if (outputTablesNames.length) {
-      tableStorageService = tableStorageService || makeTableStorageService(STORAGE_ACCOUNT_CONNECTION!)
+    tableStorageService = tableStorageService || makeTableStorageService(STORAGE_ACCOUNT_CONNECTION!)
 
-      const results: Array<TableService.BatchResult> = []
-      for (const outputTable in outputBindingData) {
-        const partitionedRows = partitionRows(outputBindingData[outputTable])
-        for (const partition in partitionedRows) {
-          const batchResult = await executeBatchInsertOrMergeEntity(tableStorageService, outputTable, dedupeRows(partitionedRows[partition]))
-          batchResult.forEach(x => results.push(x))
-        }
+    const results: Array<TableService.BatchResult> = []
+    for (const outputTable in outputs) {
+      const partitionedRows = partitionRows(outputs[outputTable])
+      for (const partition in partitionedRows) {
+        const storageTableRow = dedupeRows(partitionedRows[partition])
+          .map(row => makeTableStorageRow(row))
+
+        const batchResult = await executeBatchInsertOrMergeEntity(tableStorageService, outputTable, storageTableRow)
+        batchResult.forEach(x => results.push(x))
       }
-
-      const success = results.filter(x => !x.error)
-      const failed = results.filter(x => x.error).map(x => x.error)
-
-      if (failed.length) {
-        context.log.error(`[${serviceTag}}] - Batch Result Failed: ${failed.length}`);
-        failed.forEach(failure => context.log.error(`[${serviceTag}}] - ${JSON.stringify(failure)}`))
-        throw new Error(`Failed to write all batch data to table Storage, see error logs, Success: ${success.length} Failed:${failed.length} of ${results.length}`)
-      }
-
-      context.log.info(`[${serviceTag}] - Batch Result Successfull: ${success.length} of ${results.length}`);
     }
 
+    const success = results.filter(x => !x.error)
+    const failed = results.filter(x => x.error).map(x => x.error)
+
+    if (failed.length) {
+      failed.forEach(failure => context.log.error(`[${serviceTag}}] - ${JSON.stringify(failure)}`))
+      throw new Error(`Failed to write all batch data to table Storage, see error logs, Success: ${success.length} Failed:${failed.length} of ${results.length}`)
+    }
+
+    context.log.info(`[${serviceTag}] - Batch Result Successfull: ${success.length} of ${results.length}`);
   } catch (e) {
     context.log.error(e)
     context.log.error(`[${serviceTag}}] ************************  END:ERROR  *****************`)
@@ -95,4 +91,17 @@ export async function clientDataFeedConsumer(context: Context, eventHubMessages:
 }
 
 
+function parseMessage(x: string) {
+  const msg = JSON.parse(x);
+  assertExternalDeviceMessage(msg, "FinctionInput validation Error: Not of expected type, ExternalDeviceMessage");
+  return msg;
+}
 
+function isExternalDeviceMessage(data: unknown): data is ExternalDeviceMessage {
+  const maybeData: Partial<ExternalDeviceMessage> = data as any
+  return (maybeData.id && maybeData.device && maybeData.hardwareId && maybeData.state) ? true : false
+}
+
+function assertExternalDeviceMessage(message: string, data: unknown): asserts data is ExternalDeviceMessage {
+  if (!isExternalDeviceMessage(data)) throw new Error(message)
+}

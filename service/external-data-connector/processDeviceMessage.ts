@@ -1,15 +1,16 @@
 import { ExternalDeviceMessage, OYSTER_SCHEMA_URN, PEOPLECOUNTER_SCHEMA_URN } from "./ExternalDeviceMessage";
 import { MessageProcessingPipleing } from "./MessagePipeline";
-import { CurrentStateRow } from "./tableStorageHelper";
+import { CurrentStateRow, PipelineData } from "./tableStorageHelper";
 import { makeDemoMessageProcessor } from "./handlers/demo/demoHandler";
 import { makeCommonMessageProcessor } from "./handlers/commandProcessing";
+import { isString } from "./validation";
 
 
 export type SchemaMapping = {current: string | undefined, history: string | undefined}
 export type SchemaBindings = Record<string, SchemaMapping>
 
 
-const pipline = new MessageProcessingPipleing<ExternalDeviceMessage, CurrentStateRow>(initialisePipeline)
+const pipline = new MessageProcessingPipleing<ExternalDeviceMessage, PipelineData>(initialisePipeline)
   .initialiseHandler(makeCommonMessageProcessor)
   .initialiseHandler(makeDemoMessageProcessor)
 
@@ -38,17 +39,23 @@ export function makeOutputMessages(
 
           if(current){
             if (!outputBindings[current]) outputBindings[current] = [];
-            outputBindings[current].push(convertedMessage)
+
+            // Set row key to device id so we have one row per device
+            const currentState : CurrentStateRow = {
+              ...convertedMessage,
+              partitionKey: msg.tenantUrn,
+              rowKey: msg.deviceUrn
+            }
+            outputBindings[current].push(currentState)
           }
 
           if(history){
             if (!outputBindings[history]) outputBindings[history] = [];
 
-            // To make history set partition as deviceUrn / rowKey
             // Set row key to a unique id, preferrable from the message so idenpotent
             const historyMessage : CurrentStateRow = {
               ...convertedMessage,
-              partitionKey: convertedMessage.rowKey,
+              partitionKey: msg.tenantUrn,
               rowKey: msg.id
             }
             outputBindings[history].push(historyMessage)

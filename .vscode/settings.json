@@ -1,0 +1,5 @@
+{
+    "jest.jestCommandLine": "npm run test --",
+    "jestrunner.codeLensSelector": "**/*.{micro,integration,test,spec}.{js,jsx,ts,tsx}",
+    "jestrunner.runOptions": ["--detectOpenHandles", "--forceExit"],
+}

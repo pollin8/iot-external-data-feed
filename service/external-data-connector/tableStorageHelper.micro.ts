@@ -1,5 +1,5 @@
 import { assertThat, match } from "mismatched";
-import { CurrentStateRow, makeTableStorageRows } from "./tableStorageHelper"
+import { CurrentStateRow, makeTableStorageRow } from "./tableStorageHelper"
 
 describe("tableStorageHelper", () => {
   it('create a row with required fields', () => {
@@ -8,7 +8,7 @@ describe("tableStorageHelper", () => {
       rowKey: "some-key-2"
     }
 
-    const singleRow = makeTableStorageRows(row)
+    const singleRow = makeTableStorageRow(row)
     assertThat(singleRow).is({
       PartitionKey: { _: "some-part-1", $: "Edm.String" },
       RowKey: { _: "some-key-2", $: "Edm.String" }
@@ -34,7 +34,7 @@ describe("tableStorageHelper", () => {
 
     }
 
-    const singleRow = makeTableStorageRows(row)
+    const singleRow = makeTableStorageRow(row)
     assertThat(singleRow).is({
       PartitionKey: { _: "some-part-1", $: "Edm.String" },
       RowKey: { _: "some-key-2", $: "Edm.String" },

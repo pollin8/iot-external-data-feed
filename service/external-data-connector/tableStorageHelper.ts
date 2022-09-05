@@ -1,11 +1,13 @@
 import {createTableService, ExponentialRetryPolicyFilter, TableBatch, TableService, TableUtilities} from "azure-storage";
-import { isNumber, isBoolean, isDate, isString, isInteger } from "./ExternalDeviceMessage";
+import { isNumber, isBoolean, isDate, isString, isInteger } from "./validation"
 
 type RowTypes = string|boolean|Date|number|object
+export type PipelineData = Record<string, RowTypes>
+
 export type CurrentStateRow = {
   partitionKey: string,
   rowKey:string
-} & Record<string, RowTypes>;
+} & PipelineData;
 
 
 export function makeTableStorageService(connection: string): TableService{
@@ -15,7 +17,7 @@ export function makeTableStorageService(connection: string): TableService{
 }
 
 
-export function makeTableStorageRows(val: CurrentStateRow): Record<'PartitionKey' | 'RowKey' | string, TableUtilities.entityGenerator.EntityProperty<RowTypes>> {
+export function makeTableStorageRow(val: CurrentStateRow): Record<'PartitionKey' | 'RowKey' | string, TableUtilities.entityGenerator.EntityProperty<RowTypes>> {
   const entGen = TableUtilities.entityGenerator;
 
   const makeStorageFieldFromValue = (value:RowTypes): TableUtilities.entityGenerator.EntityProperty<RowTypes> => {
@@ -67,4 +69,3 @@ export function executeBatchInsertOrMergeEntity(svc: TableService, table: string
     })
   })
 }
-

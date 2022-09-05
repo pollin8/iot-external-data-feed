@@ -1,7 +1,7 @@
 import { CurrentStateRow } from "./tableStorageHelper"
 
   export function partitionRows<T>(rows: Array<CurrentStateRow>): Record<string, Array<CurrentStateRow>> {
-    return rows.reduce(
+    return rows.reduce<Record<string, Array<CurrentStateRow>>>(
         (prev, curr) => {
             if (!prev[curr.partitionKey]) prev[curr.partitionKey] = []
             prev[curr.partitionKey].push(curr)

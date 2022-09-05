@@ -1,12 +1,12 @@
 import { TableService } from "azure-storage";
-import { CurrentStateRow, executeBatchInsertOrMergeEntity, insertOrMergeEntity, makeTableStorageRows, makeTableStorageService } from "./tableStorageHelper"
+import { CurrentStateRow, executeBatchInsertOrMergeEntity, insertOrMergeEntity, makeTableStorageRow, makeTableStorageService } from "./tableStorageHelper"
 
 describe("tableStorageHelper", () =>{
-  const localConenction = "UseDevelopmentStorage=true";  
+  const localConenction = "UseDevelopmentStorage=true";
   const tableName = "currentStateTest"
 
   let tableService: TableService
-  
+
   beforeAll((done) =>{
     const connectionString = localConenction
     tableService = makeTableStorageService(connectionString)
@@ -23,10 +23,10 @@ describe("tableStorageHelper", () =>{
   it('writes a row', ()=>{
     const row: CurrentStateRow = {
       partitionKey: "some-part-1",
-      rowKey: "some-key-2",     
+      rowKey: "some-key-2",
     }
 
-    const singleRow = makeTableStorageRows(row)
+    const singleRow = makeTableStorageRow(row)
     return insertOrMergeEntity(tableService, tableName, singleRow)
   })
 
@@ -43,7 +43,7 @@ describe("tableStorageHelper", () =>{
       },
     }
 
-    const singleRow = makeTableStorageRows(row)
+    const singleRow = makeTableStorageRow(row)
     return insertOrMergeEntity(tableService, tableName, singleRow)
   })
 
@@ -56,7 +56,7 @@ describe("tableStorageHelper", () =>{
     {
       partitionKey: "some-part-1",
       rowKey: "some-key-3"
-    }].map(makeTableStorageRows)
+    }].map(makeTableStorageRow)
 
     return executeBatchInsertOrMergeEntity(tableService, tableName, rows)
   })

@@ -1,15 +1,16 @@
-import { ExternalDeviceMessage, isGeoJsonPoint, isString, makeGeometryPoint } from "../ExternalDeviceMessage";
+import { ExternalDeviceMessage, isGeoJsonPoint, makeGeometryPoint,  } from "../ExternalDeviceMessage";
 import { MessageProcessingPipleing } from "../MessagePipeline";
-import { CurrentStateRow } from "../tableStorageHelper";
+import { PipelineData } from "../tableStorageHelper";
+import { isString } from "../validation";
 
 
-export function makeCommonMessageProcessor(pipeline: MessageProcessingPipleing<ExternalDeviceMessage, CurrentStateRow>): void {
+export function makeCommonMessageProcessor(pipeline: MessageProcessingPipleing<ExternalDeviceMessage, PipelineData>): void {
   pipeline
     .withHandler(commonTypeConversions)
 }
 
 
-function commonTypeConversions(msg: ExternalDeviceMessage, prev: CurrentStateRow) {
+function commonTypeConversions(msg: ExternalDeviceMessage, prev: PipelineData) {
   const result = { ...prev };
 
   const { current } = msg.state;
@@ -17,6 +18,9 @@ function commonTypeConversions(msg: ExternalDeviceMessage, prev: CurrentStateRow
     const pt = makeGeometryPoint(current.location);
     result.latitude = pt.lat;
     result.longitude = pt.lon;
+  }
+  if (isGeoJsonPoint(result.location)) {
+    delete result.location;
   }
 
   if (isString(current.gps_fix_timestamp)) {

@@ -2,7 +2,7 @@ import { assertThat, match } from "mismatched";
 import { version } from "typescript";
 import { ExternalDeviceMessage, OYSTER_SCHEMA_URN } from "./ExternalDeviceMessage"
 import { makeOutputMessages, SchemaBindings } from "./processDeviceMessage";
-import { makeTableStorageRows } from "./tableStorageHelper";
+import { makeTableStorageRow } from "./tableStorageHelper";
 
 describe('processDeviceMessage', () => {
   const message: ExternalDeviceMessage = {
@@ -46,14 +46,14 @@ describe('processDeviceMessage', () => {
     it('Produces correct output message', () => {
       const outputs = makeOutputMessages(tenantMap, [message], console.log)
       assertThat(outputs.testOutput[0]).is(match.obj.has({
-        partitionKey: OYSTER_SCHEMA_URN,
-        rowKey: 'deviceUrn',
+        partitionKey: message.tenantUrn,
+        rowKey: message.deviceUrn,
         test: 100,
       }))
     })
 
     describe('Output has expected keys', ()=>{
-      let tenantBinding
+      let tenantBinding: Record<string, SchemaBindings>
 
       beforeEach(() =>{
         const schemaBinding: SchemaBindings = {
@@ -106,13 +106,13 @@ describe('processDeviceMessage', () => {
 
       assertThat(tableRows).is(match.array.length(2))
       assertThat(tableRows[0]).is(match.obj.has({
-        partitionKey: OYSTER_SCHEMA_URN,
-        rowKey: 'deviceUrn',
+        partitionKey: message.tenantUrn,
+        rowKey: message.deviceUrn,
         test: 100,
       }))
 
       assertThat(tableRows[1]).is(match.obj.has({
-        partitionKey: 'deviceUrn',
+        partitionKey: message.tenantUrn,
         rowKey: message.id,
         test: 100,
       }))
@@ -125,7 +125,7 @@ describe('processDeviceMessage', () => {
       const tableRows = Object.keys(outputs)
       .map(binding => outputs[binding])
       .flat()
-      .map(x => makeTableStorageRows(x))
+      .map(x => makeTableStorageRow(x))
 
       assertThat(tableRows).is(match.array.length(2))
       assertThat(tableRows[0]).is(match.obj.has({
