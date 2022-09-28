@@ -12,5 +12,8 @@ node_modules
 # No test output
 junit.xml
 
+#azureite
+azureStorage
+
 # No deployment packages
 ./service/deployments/*

@@ -42,8 +42,27 @@ describe("tableStorageHelper", () => {
       num: { _: 100, $: "Edm.Int32" },
       date: { _: new Date(), $: "Edm.DateTime" },
       flag: { _: false, $: "Edm.Boolean" },
-      location: {_: JSON.stringify(row.location), $: "Edm.String" }
+      location: { _: JSON.stringify(row.location), $: "Edm.String" }
     })
   })
+
+  it("creates table row with int forced to double", () => {
+    const row: CurrentStateRow = {
+      partitionKey: "some-part-1",
+      rowKey: "some-key-2",
+
+      someDouble: 10.1,
+      someInt: 33,
+    }
+    const singleRow = makeTableStorageRow(row, {someInt:{isDouble:true}})
+    assertThat(singleRow).is({
+      PartitionKey: { _: "some-part-1", $: "Edm.String" },
+      RowKey: { _: "some-key-2", $: "Edm.String" },
+      someDouble: { _: 10.1, $: "Edm.Double" },
+      someInt: { _: 33, $: "Edm.Double" },
+    })
+
+  })
 })
+
 

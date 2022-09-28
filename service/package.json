@@ -7,8 +7,9 @@
     "build": "tsc -p ./tsconfig.json",
     "clean": "rm -fr dist/** && rm -rf build/**",
     "patch": "npm version patch -m 'Patching to next version %s'",
-    "test:micro": "jest .micro.ts --passWithNoTests",
-    "test:integration": "jest .integration.ts --passWithNoTests --detectOpenHandles --forceExit",
+    "test:micro": "jest .micro.ts",
+    "test:integration": "jest .integration.ts --detectOpenHandles --forceExit",
+    "storage": "azurite --loose --silent --location ../azureStorage --debug ../azureStorage/debug.log",
     "test:ci": "npm run test:micro --  --ci --watchAll=false --reporters=default --reporters=jest-junit",
     "package": "npm run clean && npm run build && cross-env REMOVE='' ./script/deployment.sh"
   },
@@ -23,7 +24,8 @@
   "license": "MIT",
   "dependencies": {
     "@azure/event-hubs": "~5.8.0",
-    "azure-storage": "~2.10.7"
+    "azure-storage": "~2.10.7",
+    "azurite": "~3.19.0"
   },
   "devDependencies": {
     "@azure/functions": "~3.2.0",

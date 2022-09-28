@@ -1,4 +1,5 @@
 import { TableService } from "azure-storage";
+import { table } from "console";
 import { CurrentStateRow, executeBatchInsertOrMergeEntity, insertOrMergeEntity, makeTableStorageRow, makeTableStorageService } from "./tableStorageHelper"
 
 describe("tableStorageHelper", () =>{
@@ -18,8 +19,12 @@ describe("tableStorageHelper", () =>{
 
       return done()
     });
-
   })
+
+  afterAll(() => {
+    return new Promise<void>((resolve) =>setTimeout(() => resolve(), 1000))
+  })
+
   it('writes a row', ()=>{
     const row: CurrentStateRow = {
       partitionKey: "some-part-1",
@@ -56,8 +61,15 @@ describe("tableStorageHelper", () =>{
     {
       partitionKey: "some-part-1",
       rowKey: "some-key-3"
-    }].map(makeTableStorageRow)
+    },
+    {
+      partitionKey: "some-part-1",
+      rowKey: "some-key-3",
+    }]
 
-    return executeBatchInsertOrMergeEntity(tableService, tableName, rows)
+    const tableRows = rows.map(row => makeTableStorageRow(row))
+
+    return executeBatchInsertOrMergeEntity(tableService, tableName, tableRows)
+      .then((result) => console.log(JSON.stringify(result, null, 2)))
   })
 })
