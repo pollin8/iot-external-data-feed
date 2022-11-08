@@ -59,7 +59,7 @@ jobs:
         #   NODE_AUTH_TOKEN: ${{ secrets.P8_NPM_AUTH_TOKEN }}
 
       - name: Install Dependencies
-        working-directory: ./servce
+        working-directory: ./service
         run: npm ci
 
       - name: Set Version
