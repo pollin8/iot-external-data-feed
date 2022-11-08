@@ -14,9 +14,9 @@ import { executeBatchInsertOrMergeEntity, makeTableStorageRow, makeTableStorageS
 // To disable storing data for a particulat configuration set the table name to undefined
 // NOTE : These tables will not be created and must be pre-created with your azure subscription
 const schemaToOutputBindingMapDemo: SchemaBindings = {
-  [OYSTER_SCHEMA_URN]: { current: 'oyster', history: 'oysterHistory' },
-  [BINLEVEL_SCHEMA_URN]: { current: 'binLevel', history: 'binLevelHistory' },
-  [PEOPLECOUNTER_SCHEMA_URN]: { current: 'peopleCounter', history: 'peopleCounterHistory' },
+  [OYSTER_SCHEMA_URN]: { current: 'currentOyster', history: 'historyOyster' },
+  [BINLEVEL_SCHEMA_URN]: { current: 'currentBinLevel', history: 'historyBinLevel' },
+  [PEOPLECOUNTER_SCHEMA_URN]: { current: 'currentPeopleSense', history: 'historyPeopleSense' },
 };
 
 const tenantBindings: Record<string, SchemaBindings> = {

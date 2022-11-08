@@ -6,6 +6,14 @@ locals {
 
   # Must be globally unique
   storage_account_name  = var.storage_account_name
+
+  # table names to create
+  client_data_table_names = [
+    "currentOyster", "historyOyster",
+    "currentBinLevel", "historyBinLevel",
+    "currentPeopleSense", "historyPeopleSense",
+    "currentOysterAGP"
+  ]
 }
 
 
@@ -28,38 +36,11 @@ resource "azurerm_storage_account" "feed-storage" {
 ##################################################
 
 ##################################################
-# Oyster
-resource "azurerm_storage_table" "oyster" {
-  name                 = "oyster"
+resource "azurerm_storage_table" "clientdata" {
+  for_each             = toset(local.client_data_table_names)
+  name                 = each.value
   storage_account_name =  azurerm_storage_account.feed-storage.name
-}
-
-resource "azurerm_storage_table" "oysterHistory" {
-  name                 = "oysterHistory"
-  storage_account_name =  azurerm_storage_account.feed-storage.name
-}
-
-
-##################################################
-#binLevel
-resource "azurerm_storage_table" "binLevel" {
-  name                 = "binLevel"
-  storage_account_name =  azurerm_storage_account.feed-storage.name
-}
-
-resource "azurerm_storage_table" "binLevelHistory" {
-  name                 = "binLevelHistory"
-  storage_account_name =  azurerm_storage_account.feed-storage.name
-}
-
-##################################################
-#peopleCounter
-resource "azurerm_storage_table" "peopleCounter" {
-  name                 = "peopleCounter"
-  storage_account_name =  azurerm_storage_account.feed-storage.name
-}
-
-resource "azurerm_storage_table" "peopleCounterHistory" {
-  name                 = "peopleCounterHistory"
-  storage_account_name =  azurerm_storage_account.feed-storage.name
+  lifecycle {
+    prevent_destroy    = true
+  }
 }
