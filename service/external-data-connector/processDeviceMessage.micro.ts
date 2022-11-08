@@ -30,7 +30,10 @@ describe('processDeviceMessage', () => {
   it('can read package version', ()=> {
     const packageData = require('./../package.json')
     assertThat(packageData).is(match.obj.has({version: match.ofType.string()}))
-    assertThat(packageData.version.split('.')).is(match.array.length(3))
+
+    const versionString: string = packageData.version
+    const versionComponents = versionString.split('.')
+    assertThat(versionComponents.length).is(match.number.greaterEqual(3))
   })
 
   describe('makeOutputMessages', () => {

@@ -3,6 +3,7 @@
   "version": "1.0.18",
   "description": "Connects 3rd party Azure clients to a feed of their data and stores to table storage",
   "main": "index.ts",
+
   "scripts": {
     "build": "tsc -p ./tsconfig.json",
     "clean": "rm -fr dist/** && rm -rf build/**",
@@ -23,6 +24,10 @@
   ],
   "author": "Pollin8",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pollin8/iot-external-data-feed.git"
+  },
   "dependencies": {
     "@azure/event-hubs": "~5.8.0",
     "azure-storage": "~2.10.7",

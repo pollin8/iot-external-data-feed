@@ -1,6 +1,7 @@
 import { CurrentStateRow } from "./tableStorageHelper"
 
   export function partitionRows<T>(rows: Array<CurrentStateRow>): Record<string, Array<CurrentStateRow>> {
+    // Seperate out into sets by partition key, cannot set multiple partions at once
     return rows.reduce<Record<string, Array<CurrentStateRow>>>(
         (prev, curr) => {
             if (!prev[curr.partitionKey]) prev[curr.partitionKey] = []
