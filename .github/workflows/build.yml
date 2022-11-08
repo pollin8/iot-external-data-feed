@@ -53,6 +53,7 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
+          cache-dependency-path: ./service
         #   registry-url: https://npm.pkg.github.com/
         #   scope: '@pollin8'
         # env:
@@ -63,6 +64,7 @@ jobs:
         run: npm ci
 
       - name: Set Version
+        working-directory: ./service
         run: |
           # BUILD_VERSION=1.0.$GITHUB_RUN_NUMBER
           BUILD_VERSION=1.0.0-beta.$GITHUB_RUN_NUMBER
@@ -74,13 +76,16 @@ jobs:
           cat ./version.txt
 
       - name: Build
+        working-directory: ./service
         run: npm run build
 
       - name: Micro Test
+        working-directory: ./service
         run: npm run test:micro
 
 
       - name: Package
+        working-directory: ./service
         run: npm run package:ci
 
       # - name: Publish Dry Run
