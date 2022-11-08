@@ -21,19 +21,13 @@ cp -u ./host.json $TARGET
 cp -u ./LICENSE $TARGET
 find . -name 'function.json' -not -path "./build/*"  -exec cp --parents {} $TARGET ';'
 
-for val in $REMOVE; do
-    rm -rf -- "${TARGET}${val}"
-    rm -rf -- "${TARGET}dist/${val}"
-    echo 'Removed ' "${TARGET}${val}" and "${TARGET}dist/${val}"
-done
-
-
-cd $TARGET
+pushd $TARGET
 
 find . -name '*js.map' -not -path './node_modules/*' -delete
 find . -name '*.test.js' -not -path './node_modules/*' -delete
 find . -name '*.config.js' -not -path './node_modules/*' -delete
 npm install --only=prod
+
 
 # Zip unless SKIP_ZIP is false
 if [[ -z "${SKIP_ZIP}" || "${SKIP_ZIP}" == "true" ]] ;
@@ -44,4 +38,4 @@ else
   echo "Skipping zip."
 fi
 
-cd ..
+popd

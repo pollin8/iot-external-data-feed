@@ -11,7 +11,8 @@
     "test:integration": "jest .integration.ts --detectOpenHandles --forceExit",
     "storage": "azurite --loose --silent --location ../azureStorage --debug ../azureStorage/debug.log",
     "test:ci": "npm run test:micro --  --ci --watchAll=false --reporters=default --reporters=jest-junit",
-    "package": "npm run clean && npm run build && cross-env REMOVE='' ./script/deployment.sh"
+    "package": "npm run clean && npm run build && ./script/deployment.sh",
+    "package:ci": "cross-env SKIP_ZIP='false' ./script/deployment.sh"
   },
   "keywords": [
     "azure",
