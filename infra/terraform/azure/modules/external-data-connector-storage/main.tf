@@ -12,7 +12,6 @@ locals {
     "currentOyster", "historyOyster",
     "currentBinLevel", "historyBinLevel",
     "currentPeopleSense", "historyPeopleSense",
-    "currentOysterAGP"
   ]
 }
 
