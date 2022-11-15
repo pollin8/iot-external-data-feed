@@ -3,7 +3,7 @@ import { MessageProcessingPipleing } from "./MessagePipeline";
 import { CurrentStateRow, PipelineData } from "./tableStorageHelper";
 import { makeDemoMessageProcessor } from "./handlers/demo/demoHandler";
 import { makeCommonMessageProcessor } from "./handlers/commandProcessing";
-import { isString } from "./validation";
+import { Logger } from "@azure/functions";
 
 
 export type SchemaMapping = {current: string | undefined, history: string | undefined}
@@ -20,7 +20,7 @@ const pipline = new MessageProcessingPipleing<ExternalDeviceMessage, PipelineDat
 export function makeOutputMessages(
   tenantBindingMap:  Record<string, SchemaBindings>,
   forwardedMessages: Array<ExternalDeviceMessage>,
-  logger: (...args: any[]) => void
+  logger: Logger
 ): Record<string, Array<CurrentStateRow>> {
   const serviceTag = makeOutputMessages.name
   const outputBindings: Record<string, Array<CurrentStateRow>> = {}
@@ -64,7 +64,7 @@ export function makeOutputMessages(
         }
       }
     } else {
-      logger(`[${serviceTag}] No Match found Schema:${msg.schemaUrn} - Ignoring`);
+      logger.warn(`[${serviceTag}] No Match found Schema:${msg.schemaUrn} - Ignoring`);
     }
   })
 

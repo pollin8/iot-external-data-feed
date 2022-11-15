@@ -13,17 +13,19 @@ import { executeBatchInsertOrMergeEntity, makeTableStorageRow, makeTableStorageS
 // If you whish to store data for each device type in a seperate table (recommended) then use a unique table name per schema
 // To disable storing data for a particulat configuration set the table name to undefined
 // NOTE : These tables will not be created and must be pre-created with your azure subscription
-const schemaToOutputBindingMapDemo: SchemaBindings = {
+const schemaToOutputBindingMap: SchemaBindings = {
   [OYSTER_SCHEMA_URN]: { current: 'currentOyster', history: 'historyOyster' },
   [BINLEVEL_SCHEMA_URN]: { current: 'currentBinLevel', history: 'historyBinLevel' },
   [PEOPLECOUNTER_SCHEMA_URN]: { current: 'currentPeopleSense', history: 'historyPeopleSense' },
 };
 
-const tenantBindings: Record<string, SchemaBindings> = {
+const tenantBindingOverrides: Record<string, SchemaBindings> = {
   // Replace with your tenant urn, supplied by pollin8, data is pre filtered but provides
   // the ability to handle data from more than one tenant should the need arise
-  'urn:p8:tenant:demo': schemaToOutputBindingMapDemo,
+  // 'urn:p8:tenant:waipa-dc': schemaToOutputBindingMap,
 }
+
+const tenantBindings = makeBindings(process.env.TenanId as string, tenantBindingOverrides)
 
 const STORAGE_ACCOUNT_CONNECTION = process.env.StorageAccount
 let tableStorageService: TableService
@@ -104,4 +106,11 @@ function isExternalDeviceMessage(data: unknown): data is ExternalDeviceMessage {
 
 function assertExternalDeviceMessage(message: string, data: unknown): asserts data is ExternalDeviceMessage {
   if (!isExternalDeviceMessage(data)) throw new Error(message)
+}
+
+function makeBindings(tenantId: string, overrides:  Record<string, SchemaBindings>):  Record<string, SchemaBindings>{
+  return {
+    [tenantId]: schemaToOutputBindingMap,
+    ...overrides
+  }
 }

@@ -100,8 +100,11 @@ resource "azurerm_windows_function_app" "func" {
     WEBSITE_TIME_ZONE                     = "New Zealand Standard Time"
     SCM_DO_BUILD_DURING_DEPLOYMENT        = false
 
+
+    TenantId                              = "urn:p8:tenant:<tenant-id>"
     EventConsumerConnection               = local.event_consumer_conn
     StorageAccount                        = data.azurerm_storage_account.feed_data_storage.primary_connection_string
+
   }
   tags = {
     "module" = local.module_name

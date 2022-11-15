@@ -12,8 +12,8 @@ export function makeCommonMessageProcessor(pipeline: MessageProcessingPipleing<E
 
 function commonTypeConversions(msg: ExternalDeviceMessage, prev: PipelineData) {
   const result = { ...prev };
-
   const { current } = msg.state;
+
   if (isGeoJsonPoint(current.location)) {
     const pt = makeGeometryPoint(current.location);
     result.latitude = pt.lat;
