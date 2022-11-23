@@ -1,34 +1,43 @@
 import { Context } from "@azure/functions";
 import { TableService } from "azure-storage";
-
 import { BINLEVEL_SCHEMA_URN, ExternalDeviceMessage, OYSTER_SCHEMA_URN, PEOPLECOUNTER_SCHEMA_URN } from "./ExternalDeviceMessage";
 import { dedupeRows, partitionRows } from "./partionAndDedupTableData";
 import { makeOutputMessages, SchemaBindings } from "./processDeviceMessage";
 import { executeBatchInsertOrMergeEntity, makeTableStorageRow, makeTableStorageService } from "./tableStorageHelper";
 
+function makeBindings(tenantId: string, overrides?: Record<string, SchemaBindings>): Record<string, SchemaBindings> {
+  if (!tenantId || tenantId === "urn:p8:tenant:<tenant-id>") throw new Error(`Environment variable 'tenantId' not configured: tenantId:${tenantId}`)
 
+  // Replace with table names that are appropriate for you
+  // If you whish to store data for each device type in a seperate table (recommended) then use a unique table name per schema
+  // To disable storing data for a particulat configuration set the table name to undefined
+  // NOTE : These tables will not be created and must be pre-created with your azure subscription
+  const schemaToOutputBindingMap: SchemaBindings = {
+    [OYSTER_SCHEMA_URN]: { current: 'currentOyster', history: 'historyOyster' },
+    [BINLEVEL_SCHEMA_URN]: { current: 'currentBinLevel', history: 'historyBinLevel' },
+    [PEOPLECOUNTER_SCHEMA_URN]: { current: 'currentPeopleSense', history: 'historyPeopleSense' },
+  };
 
+  // const tenantBindingOverrides: Record<string, SchemaBindings> = {
+  //   // Replace custom tenantbindings here
+  // }
 
-// Replace with table names that are appropriate for you
-// If you whish to store data for each device type in a seperate table (recommended) then use a unique table name per schema
-// To disable storing data for a particulat configuration set the table name to undefined
-// NOTE : These tables will not be created and must be pre-created with your azure subscription
-const schemaToOutputBindingMap: SchemaBindings = {
-  [OYSTER_SCHEMA_URN]: { current: 'currentOyster', history: 'historyOyster' },
-  [BINLEVEL_SCHEMA_URN]: { current: 'currentBinLevel', history: 'historyBinLevel' },
-  [PEOPLECOUNTER_SCHEMA_URN]: { current: 'currentPeopleSense', history: 'historyPeopleSense' },
+  return {
+    [tenantId]: schemaToOutputBindingMap,
+    ...overrides
+  }
+}
+const typeHints = {
+  vbat: { isDouble: true },
+  vext: { isDouble: true },
+  BatteryVoltage: { isDouble: true },
 };
 
-const tenantBindingOverrides: Record<string, SchemaBindings> = {
-  // Replace with your tenant urn, supplied by pollin8, data is pre filtered but provides
-  // the ability to handle data from more than one tenant should the need arise
-  // 'urn:p8:tenant:waipa-dc': schemaToOutputBindingMap,
-}
+const TENANT_ID = process.env.TenantId as string
+const STORAGE_ACCOUNT_CONNECTION = process.env.StorageAccount as string
 
-const tenantBindings = makeBindings(process.env.TenanId as string, tenantBindingOverrides)
-
-const STORAGE_ACCOUNT_CONNECTION = process.env.StorageAccount
 let tableStorageService: TableService
+let tenantBindings: Record<string, SchemaBindings>
 
 export async function clientDataFeedConsumer(context: Context, eventHubMessages: Array<string>) {
   const version_tag = "1.0.0"
@@ -39,8 +48,19 @@ export async function clientDataFeedConsumer(context: Context, eventHubMessages:
   log('Function triggered to process messages: ', eventHubMessages.length);
 
   try {
-    context.log(`STORAGE_ACCOUNT_CONNECTION -  ${STORAGE_ACCOUNT_CONNECTION ? 'Found' : 'Missing Exiting'}`);
-    if (!STORAGE_ACCOUNT_CONNECTION) throw new Error('STORAGE_ACCOUNT_CONNECTION Missing, Named:StorageAccount')
+
+    if (!TENANT_ID) {
+      context.log.error(`TENANT_ID -  Missing Exiting`);
+      throw new Error('TENANT_ID Missing, Named:TenantId')
+    }
+
+    if (!STORAGE_ACCOUNT_CONNECTION) {
+      context.log.error(`STORAGE_ACCOUNT_CONNECTION -  Missing Exiting`);
+      throw new Error('STORAGE_ACCOUNT_CONNECTION Missing, Named:StorageAccount')
+    }
+
+    tenantBindings = tenantBindings || makeBindings(TENANT_ID)
+    tableStorageService = tableStorageService || makeTableStorageService(STORAGE_ACCOUNT_CONNECTION!)
 
     if (!eventHubMessages || eventHubMessages.length === 0) return
 
@@ -57,19 +77,20 @@ export async function clientDataFeedConsumer(context: Context, eventHubMessages:
       .map(parseMessage)
       .filter(isExternalDeviceMessage);
 
+
     const outputs = makeOutputMessages(tenantBindings, inputMessages, context.log);
     const outputTablesNames = Object.keys(outputs)
     context.log(`[${serviceTag}}] - Number of Outputs:${outputTablesNames.length}, Total Rows:${eventHubMessages.length}`)
     if (outputTablesNames.length === 0) return
 
-    tableStorageService = tableStorageService || makeTableStorageService(STORAGE_ACCOUNT_CONNECTION!)
+
 
     const results: Array<TableService.BatchResult> = []
     for (const outputTable in outputs) {
       const partitionedRows = partitionRows(outputs[outputTable])
       for (const partition in partitionedRows) {
         const storageTableRow = dedupeRows(partitionedRows[partition])
-          .map(row => makeTableStorageRow(row))
+          .map(row => makeTableStorageRow(row, typeHints))
 
         const batchResult = await executeBatchInsertOrMergeEntity(tableStorageService, outputTable, storageTableRow)
         batchResult.forEach(x => results.push(x))
@@ -106,11 +127,4 @@ function isExternalDeviceMessage(data: unknown): data is ExternalDeviceMessage {
 
 function assertExternalDeviceMessage(message: string, data: unknown): asserts data is ExternalDeviceMessage {
   if (!isExternalDeviceMessage(data)) throw new Error(message)
-}
-
-function makeBindings(tenantId: string, overrides:  Record<string, SchemaBindings>):  Record<string, SchemaBindings>{
-  return {
-    [tenantId]: schemaToOutputBindingMap,
-    ...overrides
-  }
 }

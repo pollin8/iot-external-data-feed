@@ -1,10 +1,11 @@
+import { Logger } from "@azure/functions";
 import { assertThat, match } from "mismatched";
-import { version } from "typescript";
 import { ExternalDeviceMessage, OYSTER_SCHEMA_URN } from "./ExternalDeviceMessage"
 import { makeOutputMessages, SchemaBindings } from "./processDeviceMessage";
 import { makeTableStorageRow } from "./tableStorageHelper";
 
 describe('processDeviceMessage', () => {
+  const logger = makeConsoleServiceLogger()
   const message: ExternalDeviceMessage = {
     id: "some-id-1",
     device: "device",
@@ -39,7 +40,7 @@ describe('processDeviceMessage', () => {
   describe('makeOutputMessages', () => {
 
     it('Produces an output', () => {
-      const outputs = makeOutputMessages(tenantMap, [message], console.log)
+      const outputs = makeOutputMessages(tenantMap, [message], logger)
 
       assertThat(outputs).is(match.obj.has({
         testOutput: match.array.length(1)
@@ -47,7 +48,7 @@ describe('processDeviceMessage', () => {
     })
 
     it('Produces correct output message', () => {
-      const outputs = makeOutputMessages(tenantMap, [message], console.log)
+      const outputs = makeOutputMessages(tenantMap, [message], logger)
       assertThat(outputs.testOutput[0]).is(match.obj.has({
         partitionKey: message.tenantUrn,
         rowKey: message.deviceUrn,
@@ -70,14 +71,14 @@ describe('processDeviceMessage', () => {
       })
 
       it('Current and history', () => {
-        const outputs = makeOutputMessages(tenantBinding, [message], console.log)
+        const outputs = makeOutputMessages(tenantBinding, [message], logger)
         const keys = Object.keys(outputs)
         assertThat(keys).is(["testOutput", "outputHistory"])
       })
 
       it('Current only', () => {
         tenantBinding[message.tenantUrn][OYSTER_SCHEMA_URN].history = undefined
-        const outputs = makeOutputMessages(tenantBinding, [message], console.log)
+        const outputs = makeOutputMessages(tenantBinding, [message], logger)
         const keys = Object.keys(outputs)
         assertThat(keys).is(["testOutput"])
       })
@@ -85,7 +86,7 @@ describe('processDeviceMessage', () => {
 
       it('History only', () => {
         tenantBinding[message.tenantUrn][OYSTER_SCHEMA_URN].current = undefined
-        const outputs = makeOutputMessages(tenantBinding, [message], console.log)
+        const outputs = makeOutputMessages(tenantBinding, [message], logger)
         const keys = Object.keys(outputs)
         assertThat(keys).is(["outputHistory"])
       })
@@ -93,7 +94,7 @@ describe('processDeviceMessage', () => {
       it('None', () => {
         tenantBinding[message.tenantUrn][OYSTER_SCHEMA_URN].current = undefined
         tenantBinding[message.tenantUrn][OYSTER_SCHEMA_URN].history = undefined
-        const outputs = makeOutputMessages(tenantBinding, [message], console.log)
+        const outputs = makeOutputMessages(tenantBinding, [message], logger)
         const keys = Object.keys(outputs)
         assertThat(keys).is([])
       })
@@ -102,7 +103,7 @@ describe('processDeviceMessage', () => {
 
 
     it('makes expected rows', ()=>{
-      const outputs = makeOutputMessages(tenantMap, [message], console.log)
+      const outputs = makeOutputMessages(tenantMap, [message], logger)
       const tableRows = Object.keys(outputs)
       .map(binding => outputs[binding])
       .flat()
@@ -124,7 +125,7 @@ describe('processDeviceMessage', () => {
 
   describe('end to end test', ()=>{
     it('makes correct table entity', ()=>{
-      const outputs = makeOutputMessages(tenantMap, [message], console.log)
+      const outputs = makeOutputMessages(tenantMap, [message], logger)
       const tableRows = Object.keys(outputs)
       .map(binding => outputs[binding])
       .flat()
@@ -148,4 +149,14 @@ describe('processDeviceMessage', () => {
     })
 
   })
+
+  function makeConsoleServiceLogger(): Logger {
+    const defaultLog = (data: any[]) => console.info(data)
+    defaultLog.error = console.error
+    defaultLog.warn = console.warn
+    defaultLog.info = console.info
+    defaultLog.verbose = console.debug
+
+    return defaultLog;
+  }
 })
