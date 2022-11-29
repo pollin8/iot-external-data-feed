@@ -9,7 +9,7 @@ describe("clientDataFeedHandler", () => {
     let thespian: Thespian
     let mockTableService: TMocked<TableService>
     const developmentConnectionString = 'UseDevelopmentStorage=true'
-    const msg = {
+    const msg = [{
         "id": "1de45f84-9388-417c-8d3d-145461984f2b",
         "hardwareId": "12000886",
         "timestamp": "2022-11-29T04:48:40.000Z",
@@ -32,7 +32,31 @@ describe("clientDataFeedHandler", () => {
                 "locality": "Cambridge"
             }
         }
-    }
+    },
+    {
+        "id": "7a8d9192-84a7-4bfe-9222-5f57e9bd12a4",
+        "hardwareId": "02001384",
+        "timestamp": "2022-11-29T04:57:25.000Z",
+        "tenantUrn": "urn:p8:tenant:waipa-dc",
+        "deviceUrn": "urn:p8:tenant:waipa-dc:device:1-maungatautari-road",
+        "schemaUrn": "urn:p8:schema:peoplesense",
+        "state": {
+          "current": {
+            "BatteryVoltage": 6.9,
+            "Delta": 10,
+            "location": {
+              "type": "Point",
+              "coordinates": [
+                175.48134202041396,
+                -37.912336764494846
+              ]
+            },
+            "TotalCount": 257946,
+            "address": "1 Maungatautari Road, Leamington, Cambridge 3432",
+            "locality": "Leamington"
+          }
+        }
+      }]
 
     beforeAll(() => {
         const tenant = "urn:p8:tenant:xx"
@@ -57,7 +81,7 @@ describe("clientDataFeedHandler", () => {
 
         const bindings = makeBindings("urn:p8:tenant:waipa-dc")
         const logger = makeConsoleServiceLogger()
-        const eventHubMessages = [JSON.stringify(msg)]
+        const eventHubMessages = msg.map(x => JSON.stringify(x))
 
         const localTableService = makeTableStorageService(developmentConnectionString)
         await clientDataFeedHandler("test", bindings, localTableService, logger, eventHubMessages)
