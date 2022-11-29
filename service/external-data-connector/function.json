@@ -6,6 +6,7 @@
       "datatype": "string",
       "cardinality": "many",
       "connection": "EventConsumerConnection",
+      "eventHubName": "waipa-dc",
       "direction": "in"
     }
   ],

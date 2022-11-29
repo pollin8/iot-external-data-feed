@@ -25,6 +25,8 @@ pushd $TARGET
 
 find . -name '*js.map' -not -path './node_modules/*' -delete
 find . -name '*.test.js' -not -path './node_modules/*' -delete
+find . -name '*.micro.js' -not -path './node_modules/*' -delete
+find . -name '*.integration.js' -not -path './node_modules/*' -delete
 find . -name '*.config.js' -not -path './node_modules/*' -delete
 npm install --only=prod
 
