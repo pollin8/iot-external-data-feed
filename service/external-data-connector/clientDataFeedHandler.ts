@@ -49,6 +49,10 @@ export async function clientDataFeedHandler(
       .map(parseMessage)
       .filter(isExternalDeviceMessage);
 
+    if( eventHubMessages.length !== inputMessages.length) {
+      logger.warn(`Some input messages not processed as they are malformed Total:${eventHubMessages.length} Valid:${inputMessages.length}`)
+      if(inputMessages.length === 0) return []
+    }
 
     const outputs = makeOutputMessages(tenantBindings, inputMessages, logger);
     const outputTablesNames = Object.keys(outputs)
@@ -77,20 +81,20 @@ export async function clientDataFeedHandler(
 
     logger.info(`[${serviceTag}] - Batch Result Successfull: ${success.length} of ${results.length}`);
 
-    return  results
+    return results
   }
 
-  function parseMessage(x: string) : ExternalDeviceMessage{
-    const msg = JSON.parse(x);
-    assertExternalDeviceMessage("FunctionInput validation Error: Not of expected type, ExternalDeviceMessage", msg);
+  function parseMessage(x: string) : unknown {
+    const msg = JSON.parse(x) as unknown;
+    // assertExternalDeviceMessage("FunctionInput validation Error: Not of expected type, ExternalDeviceMessage", msg);
     return msg;
   }
 
   function isExternalDeviceMessage(data: unknown): data is ExternalDeviceMessage {
     const maybeData: Partial<ExternalDeviceMessage> = data as any
-    return (maybeData.id && maybeData.deviceUrn && maybeData.hardwareId && maybeData.state) ? true : false
+    return (maybeData.id && maybeData.tenantUrn && maybeData.schemaUrn && maybeData.deviceUrn && maybeData.hardwareId && maybeData.state) ? true : false
   }
 
-  function assertExternalDeviceMessage(message: string, data: object): asserts data is ExternalDeviceMessage {
+  function assertExternalDeviceMessage(message: string, data: unknown): asserts data is ExternalDeviceMessage {
     if (!isExternalDeviceMessage(data)) throw new Error(message)
   }

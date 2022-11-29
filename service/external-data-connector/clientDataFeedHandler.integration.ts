@@ -1,9 +1,9 @@
 import { Thespian, TMocked } from "thespian"
-import { assertThat } from "mismatched"
 import { clientDataFeedHandler, makeBindings } from "./clientDataFeedHandler"
 import { TableService } from "azure-storage"
 import { Logger } from "@azure/functions"
 import { makeTableStorageService } from "./tableStorageHelper"
+import { assertThat, match } from "mismatched"
 
 describe("clientDataFeedHandler", () => {
     let thespian: Thespian
@@ -58,20 +58,29 @@ describe("clientDataFeedHandler", () => {
         }
       }]
 
-    beforeAll(() => {
+    beforeAll(() => {})
+
+    beforeEach(async () => {
+        thespian = new Thespian()
+        mockTableService = thespian.mock("tableService")
+
         const tenant = "urn:p8:tenant:xx"
         const bindings = makeBindings(tenant)
         const localTableService = makeTableStorageService(developmentConnectionString)
         const promises = Object.values(bindings[tenant]).map(async (x) => {
-            if(x.current) await createTable(localTableService, x.current)
-            if(x.history) await createTable(localTableService, x.history)
+            if(x.current) {
+                const table = x.current
+                await deleteTable(localTableService, table)
+                await createTable(localTableService, table)
+            }
+            if(x.history) {
+                const table = x.history
+                await deleteTable(localTableService, table)
+                await createTable(localTableService, table)
+            }
         })
 
         return Promise.all(promises)
-    })
-    beforeEach(() => {
-        thespian = new Thespian()
-        mockTableService = thespian.mock("tableService")
     })
 
     afterEach(() => thespian.verify())
@@ -81,10 +90,11 @@ describe("clientDataFeedHandler", () => {
 
         const bindings = makeBindings("urn:p8:tenant:waipa-dc")
         const logger = makeConsoleServiceLogger()
-        const eventHubMessages = msg.map(x => JSON.stringify(x))
-
         const localTableService = makeTableStorageService(developmentConnectionString)
-        await clientDataFeedHandler("test", bindings, localTableService, logger, eventHubMessages)
+
+        const eventHubMessages = msg.map(x => JSON.stringify(x))
+        const results = await clientDataFeedHandler("test", bindings, localTableService, logger, eventHubMessages)
+        assertThat(results).is(match.array.length(2* eventHubMessages.length))
     })
 
     function makeConsoleServiceLogger(): Logger {
@@ -106,4 +116,16 @@ describe("clientDataFeedHandler", () => {
             )
         )
     }
+
+    function deleteTable(srv: TableService, name:string) : Promise<void>{
+        return new Promise<void>(
+            (resolve, reject) => srv.deleteTableIfExists(
+                name,
+                {},
+                (error) => error ? reject(error) : resolve()
+            )
+        )
+    }
+
+
 })
